@@ -18,19 +18,23 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.tigrisdata.db.jackson.TigrisAnnotationIntrospector;
+
 import java.time.Duration;
+import java.util.Objects;
 
 /** Tigris client configuration */
 public class TigrisConfiguration {
 
   private final String serverURL;
   private final TigrisConfiguration.NetworkConfig network;
+  private final TigrisConfiguration.OAuth2Config oAuth2Config;
   private final ObjectMapper objectMapper;
 
   private TigrisConfiguration(Builder builder) {
     this.serverURL = builder.baseURL;
     this.network = builder.network;
     this.objectMapper = builder.objectMapper;
+    this.oAuth2Config = builder.oAuth2Config;
   }
 
   /**
@@ -55,11 +59,16 @@ public class TigrisConfiguration {
     return objectMapper;
   }
 
+  public OAuth2Config getoAuth2Config() {
+    return oAuth2Config;
+  }
+
   /** Builder class for {@link TigrisConfiguration} */
   public static final class Builder {
 
     private final String baseURL;
     private TigrisConfiguration.NetworkConfig network;
+    private TigrisConfiguration.OAuth2Config oAuth2Config;
     private ObjectMapper objectMapper;
 
     private Builder(String baseURL) {
@@ -71,6 +80,7 @@ public class TigrisConfiguration {
               .setAnnotationIntrospector(new TigrisAnnotationIntrospector())
               .registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES))
               .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      this.oAuth2Config = null;
     }
 
     /**
@@ -86,7 +96,7 @@ public class TigrisConfiguration {
 
     /**
      * This will customize {@link ObjectMapper} instance used internally. It is highly recommended
-     * to customize this instance with extra care
+     * customizing this instance with extra care
      *
      * @param objectMapper customized object mapper
      * @return ongoing builder
@@ -96,8 +106,88 @@ public class TigrisConfiguration {
       return this;
     }
 
+    /**
+     * This will enable and customize {@link OAuth2Config}.
+     *
+     * @param oAuth2Config oauth2 config
+     * @return ongoing builder
+     */
+    public Builder withOAuth2(OAuth2Config oAuth2Config) {
+      this.oAuth2Config = oAuth2Config;
+      return this;
+    }
+
     public TigrisConfiguration build() {
       return new TigrisConfiguration(this);
+    }
+  }
+
+  public static class OAuth2Config {
+    private final String refreshToken;
+    private final String clientId;
+    private final String tokenURL;
+
+    private OAuth2Config(OAuth2Config.Builder builder) {
+      this.refreshToken = builder.refreshToken;
+      this.clientId = builder.clientId;
+      this.tokenURL = builder.tokenURL;
+    }
+
+    public String getRefreshToken() {
+      return refreshToken;
+    }
+
+    public String getClientId() {
+      return clientId;
+    }
+
+    public String getTokenURL() {
+      return tokenURL;
+    }
+
+    public static OAuth2Config.Builder newBuilder(String refreshToken) {
+      return new OAuth2Config.Builder(refreshToken);
+    }
+
+    public static class Builder {
+      private String refreshToken;
+      private String clientId;
+      private String tokenURL;
+
+      private Builder(String refreshToken) {
+        this.refreshToken = refreshToken;
+        this.clientId = "INSERT-DEFAULT-CLIENT-ID-HERE";
+        this.tokenURL = "INSERT-DEFAULT-OAUTH-TOKEN-URL-HERE";
+      }
+
+      public OAuth2Config.Builder withClientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+      }
+
+      public OAuth2Config.Builder withTokenURL(String tokenURL) {
+        this.tokenURL = tokenURL;
+        return this;
+      }
+
+      public OAuth2Config build() {
+        return new OAuth2Config(this);
+      }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      OAuth2Config that = (OAuth2Config) o;
+      return Objects.equals(refreshToken, that.refreshToken)
+          && Objects.equals(clientId, that.clientId)
+          && Objects.equals(tokenURL, that.tokenURL);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(refreshToken, clientId, tokenURL);
     }
   }
 
