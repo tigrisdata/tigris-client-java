@@ -16,6 +16,7 @@ package com.tigrisdata.db.client.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -30,6 +31,7 @@ public class TigrisConfigurationTest {
     assertNotNull(defaultConfiguration.getObjectMapper());
 
     assertEquals(Duration.ofSeconds(5), defaultConfiguration.getNetwork().getDeadline());
+    assertNull(defaultConfiguration.getoAuth2Config());
   }
 
   @Test
@@ -42,6 +44,11 @@ public class TigrisConfigurationTest {
                     .usePlainText()
                     .withDeadline(Duration.ofSeconds(50))
                     .build())
+            .withOAuth2(
+                TigrisConfiguration.OAuth2Config.newBuilder("test-refresh-token")
+                    .withClientId("test-client-id")
+                    .withTokenURL("test-token-url")
+                    .build())
             .withObjectMapper(objectMapper)
             .build();
 
@@ -51,5 +58,9 @@ public class TigrisConfigurationTest {
     assertTrue(customConfiguration.getNetwork().isUsePlainText());
 
     assertEquals(Duration.ofSeconds(50), customConfiguration.getNetwork().getDeadline());
+
+    assertEquals("test-client-id", customConfiguration.getoAuth2Config().getClientId());
+    assertEquals("test-refresh-token", customConfiguration.getoAuth2Config().getRefreshToken());
+    assertEquals("test-token-url", customConfiguration.getoAuth2Config().getTokenURL());
   }
 }
